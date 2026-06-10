@@ -1,29 +1,38 @@
 import streamlit as st
-from openai import OpenAI
+import pandas as pd
 
-# Load API key from Streamlit secrets
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Page setup
+st.set_page_config(page_title="Commodity Code Finder", layout="centered")
 
 st.title("Commodity Code Finder")
+st.markdown("Search for the correct HS (commodity) code")
 
-description = st.text_area("Enter product description:")
+# Load CSV
+df = pd.read_csv("hs_codes.csv")
 
-if st.button("Find Code"):
-    prompt = f"""
-    You are a customs expert.
-    Based on the description below, suggest the most likely HS commodity code and explain why.
+# Clean column names
+df.columns = df.columns.str.lower()
 
-    Description: {description}
+# Try to automatically detect columns
+if "description" not in df.columns:
+    df["description"] = df.iloc[:, 1]
 
-    Answer format:
-    - Code:
-    - Description:
-    - Reason:
-    """
+if "code" not in df.columns:
+    df["code"] = df.iloc[:, 0]
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
+# User input
+search = st.text_input("Enter product description")
 
-    st.write(response.choices[0].message.content)
+# Search logic
+if search:
+    results = df[df["description"].astype(str).str.contains(search, case=False, na=False)]
+
+    if not results.empty:
+        st.subheader("Top Matches")
+        st.dataframe(results[["code", "description"]].head(10))
+    else:
+        st.warning("No matches found. Try different keywords.")
+
+# Info
+st.info("This is a free version using dataset matching. Always verify codes before use.")
+``
