@@ -1,4 +1,4 @@
-iimport streamlit as st
+import streamlit as st
 from openai import OpenAI
 
 # Load API key from Streamlit secrets
